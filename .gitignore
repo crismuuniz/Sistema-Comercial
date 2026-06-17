@@ -1,1 +1,4 @@
-.venv
+*.db
+*.xlsx
+.DS_Store
+__pycache__/
