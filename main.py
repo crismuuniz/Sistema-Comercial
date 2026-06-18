@@ -20,14 +20,17 @@ def init_db():
                           (rota TEXT, cliente TEXT, produto TEXT, motivo TEXT)''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS bpm 
                           (numero TEXT, cliente TEXT, motivo TEXT, resolvido TEXT)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS visitas 
+                          (nome TEXT, local TEXT, cnpj TEXT, observacao TEXT)''')
+                          
         conn.commit()
 
 init_db()
 
 st.title("📦 Sistema de Gestão Comercial")
 
-aba_pedidos, aba_devolucao, aba_bpm, aba_relatorio = st.tabs([
-    "Pedidos", "Devoluções", "BPM (Chamados)", "Relatórios & Exportação"
+aba_pedidos, aba_devolucao, aba_bpm, aba_visitas, aba_relatorio = st.tabs([
+    "Pedidos", "Devoluções", "BPM (Chamados)", "Visitas", "Relatórios & Exportação"
 ])
 
 # LÓGICA DE PEDIDOS
@@ -77,6 +80,23 @@ with aba_bpm:
             conn.commit()
         st.success("BPM registrado!")
 
+# LÓGICA DE VISITAS
+with aba_visitas:
+    st.header("Registro de Visitas")
+    with st.form("form_visitas", clear_on_submit=True):
+        nome = st.text_input("Nome do Visitante")
+        local = st.text_input("Local da Visita")
+        cnpj = st.text_input("CNPJ")
+        obs = st.text_area("Observação")
+        
+        submitted = st.form_submit_button("Salvar Visita")
+        if submitted:
+            with get_db() as conn:
+                conn.execute("INSERT INTO visitas VALUES (?, ?, ?, ?)", 
+                             (nome, local, cnpj, obs))
+                conn.commit()
+            st.success("Visita registrada com sucesso!")
+
 # LÓGICA DE EXPORTAÇÃO
               
 with aba_relatorio:
@@ -90,7 +110,7 @@ with aba_relatorio:
         buffer = io.BytesIO()
         
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            for tb in ['pedidos', 'devolucao', 'bpm']:
+            for tb in ['pedidos', 'devolucao', 'bpm' , 'visitas']:
                 df = pd.read_sql(f"SELECT * FROM {tb}", get_db())
                 
                 # Filtragem de data (se aplicável)
